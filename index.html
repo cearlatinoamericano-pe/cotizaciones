@@ -282,20 +282,89 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .header {
+                padding: 15px 20px;
+            }
+
             .header h1 {
-                font-size: 1.8em;
+                font-size: 1.3em;
+            }
+
+            .header p {
+                font-size: 0.8em;
+            }
+
+            .controls {
+                padding: 10px 15px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls label,
+            .controls select {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .btn-generate {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+
+            .table-wrapper {
+                padding: 5px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                /* Mantener la tabla en su tamaño original, pequeña pero completa */
+                min-width: 100%;
             }
 
             table {
-                font-size: 12px;
+                font-size: 11px;
+                width: max-content;
+                min-width: 100%;
             }
 
             th, td {
-                padding: 8px 5px;
+                padding: 6px 5px;
+                white-space: nowrap;
             }
 
             .product-name {
-                min-width: 200px;
+                min-width: 280px;
+                white-space: normal;
+            }
+
+            .summary {
+                padding: 10px 15px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 10px 12px;
+            }
+
+            .summary-card h3 {
+                font-size: 0.8em;
+            }
+
+            .summary-card .total-amount {
+                font-size: 1.1em;
+            }
+
+            .legend {
+                padding: 10px 15px;
+                font-size: 11px;
             }
         }
     </style>
