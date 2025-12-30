@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparación de Cotizaciones</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e8f0f8;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #1e3a5f;
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            border-bottom: 3px solid #2c5a8a;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .controls {
+            padding: 15px 30px;
+            background: #f5f7fa;
+            border-bottom: 1px solid #d0d7de;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls label {
+            font-weight: 500;
+            color: #2c5a8a;
+            font-size: 14px;
+        }
+
+        .controls select,
+        .controls input {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            color: #2c5a8a;
+        }
+
+        .controls select:focus,
+        .controls input:focus {
+            outline: none;
+            border-color: #2c5a8a;
+        }
+
+        .btn-generate {
+            padding: 8px 20px;
+            background: #2c5a8a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-left: auto;
+        }
+
+        .btn-generate:hover {
+            background: #1e3a5f;
+        }
+
+        .btn-generate:active {
+            background: #15304a;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 20px 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #2c5a8a;
+            color: white;
+        }
+
+        thead tr:first-child th {
+            background: #1e3a5f;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        thead tr:first-child th:last-child {
+            border-right: none;
+        }
+
+        thead tr:last-child th {
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 12px;
+            background: #2c5a8a;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        thead tr:last-child th:last-child {
+            border-right: none;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e6ed;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f7fa;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        tbody tr:nth-child(even):hover {
+            background-color: #f0f3f6;
+        }
+
+        td {
+            padding: 10px 8px;
+            color: #2c3e50;
+            border-right: 1px solid #e0e6ed;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        .product-name {
+            font-weight: 500;
+            color: #1e3a5f;
+            min-width: 280px;
+            background: #f5f7fa;
+            border-right: 2px solid #d0d7de !important;
+        }
+
+        .quantity {
+            text-align: center;
+            font-weight: 500;
+            color: #2c5a8a;
+        }
+
+        .price {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            color: #2c3e50;
+        }
+
+        .total {
+            text-align: right;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            color: #1e3a5f;
+        }
+
+        .not-available {
+            color: #adb5bd;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .best-price {
+            background-color: #d1e7dd !important;
+            font-weight: 700 !important;
+            color: #0f5132 !important;
+        }
+
+        .worst-price {
+            background-color: #f8d7da !important;
+            color: #842029 !important;
+        }
+
+        .summary {
+            padding: 20px 30px;
+            background: #f5f7fa;
+            border-top: 1px solid #d0d7de;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            border: 1px solid #d0d7de;
+        }
+
+        .summary-card h3 {
+            color: #2c5a8a;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+
+        .summary-card .total-amount {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1e3a5f;
+            font-family: 'Courier New', monospace;
+        }
+
+        .legend {
+            padding: 12px 30px;
+            background: #f5f7fa;
+            border-top: 1px solid #d0d7de;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: #2c5a8a;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+        }
+
+        .legend-best {
+            background-color: #d1e7dd;
+        }
+
+        .legend-worst {
+            background-color: #f8d7da;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 5px;
+            }
+
+            .product-name {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Comparación de Cotizaciones</h1>
+            <p>Análisis comparativo de precios unitarios y totales</p>
+        </div>
+
+        <div class="controls">
+            <label for="highlightMode">Resaltar:</label>
+            <select id="highlightMode">
+                <option value="none">Sin resaltar</option>
+                <option value="best">Mejor precio</option>
+                <option value="worst">Peor precio</option>
+            </select>
+
+            <label for="filterCotizacion">Filtrar por cotización:</label>
+            <select id="filterCotizacion">
+                <option value="all">Todas</option>
+                <option value="cot1">Alexis</option>
+                <option value="cot2">Comercial Ysabel</option>
+                <option value="cot3">Sonex</option>
+                <option value="cot4">Importaciones Matt</option>
+            </select>
+
+            <button class="btn-generate" id="btnGeneratePDF">Generar Mejor Orden de Compra</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Producto</th>
+                        <th rowspan="2">Cant.</th>
+                        <th colspan="2">Alexis</th>
+                        <th colspan="2">Comercial Ysabel</th>
+                        <th colspan="2">Sonex</th>
+                        <th colspan="2">Importaciones Matt</th>
+                    </tr>
+                    <tr>
+                        <th>P. Unit.</th>
+                        <th>Total</th>
+                        <th>P. Unit.</th>
+                        <th>Total</th>
+                        <th>P. Unit.</th>
+                        <th>Total</th>
+                        <th>P. Unit.</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Los datos se cargarán con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Alexis - Total</h3>
+                <div class="total-amount" id="total1">S/. 0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>Comercial Ysabel - Total</h3>
+                <div class="total-amount" id="total2">S/. 0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>Sonex - Total</h3>
+                <div class="total-amount" id="total3">S/. 0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>Importaciones Matt - Total</h3>
+                <div class="total-amount" id="total4">S/. 0.00</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color legend-best"></div>
+                <span>Mejor precio</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-worst"></div>
+                <span>Peor precio</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de las cotizaciones
+        const cotizaciones = {
+            cot1: [
+                { producto: "Cables HDMI Fibra 2,1 20m", cantidad: 14, precioUnit: 220.00, total: 3080.00 },
+                { producto: "Cables HDMI Fibra 2,1 30m", cantidad: 6, precioUnit: 280.00, total: 1680.00 },
+                { producto: "Cables HDMI de 10m 2,1", cantidad: 6, precioUnit: 120.00, total: 720.00 },
+                { producto: "Cables HDMI de 5m 2,1", cantidad: 4, precioUnit: 90.00, total: 360.00 },
+                { producto: "Rollos de Cable Canon 100m", cantidad: 6, precioUnit: 580.50, total: 3483.00 },
+                { producto: "Puntas Canon Neutrik", cantidad: 70, precioUnit: 31.50, total: 2205.00 },
+                { producto: "Plug Balanceado Neutrik", cantidad: 6, precioUnit: 29.70, total: 178.20 },
+                { producto: "Placas Canon 6 Inputs", cantidad: 4, precioUnit: 297.00, total: 1188.00 },
+                { producto: "Placas Canon 8 inputs", cantidad: 2, precioUnit: 337.50, total: 675.00 },
+                { producto: "Cables Extensores USB 20m", cantidad: 2, precioUnit: 264.00, total: 528.00 },
+                { producto: "Cable Extensor USB 30m", cantidad: 1, precioUnit: 336.00, total: 336.00 },
+                { producto: "Placas HDMI + USB 3,0", cantidad: 3, precioUnit: 81.00, total: 243.00 },
+                { producto: "Placas HDMI 2,1", cantidad: 2, precioUnit: 67.50, total: 135.00 },
+                { producto: "Placas HDMI 6 entradas 2,1", cantidad: 3, precioUnit: 195.75, total: 587.25 },
+                { producto: "Placas HDMI 4 entradas 2,1", cantidad: 3, precioUnit: 162.00, total: 486.00 },
+                { producto: "Costo por implementación", cantidad: 1, precioUnit: 2200.00, total: 2200.00 }
+            ],
+            cot2: [
+                { producto: "Rollos cable XLR", cantidad: 6, precioUnit: 590.00, total: 3540.00 },
+                { producto: "Cable XLR-XLR zouts neutrik", cantidad: 14, precioUnit: 176.00, total: 2464.00 },
+                { producto: "Cable XLR-XLR zouts", cantidad: 6, precioUnit: 230.00, total: 1380.00 },
+                { producto: "Cables XLR-XLR suits", cantidad: 12, precioUnit: 86.00, total: 1032.00 },
+                { producto: "Plug XLR", cantidad: 6, precioUnit: 86.00, total: 516.00 },
+                { producto: "Puntas XLR-XLR Hembra/Machos", cantidad: 70, precioUnit: 56.00, total: 1960.00 },
+                { producto: "Plug Balanceado Neutrik suits", cantidad: 6, precioUnit: 86.00, total: 516.00 }
+            ],
+            cot3: [
+                { producto: "Cables HDMI Fibra 2.1 20m NETCOM", cantidad: 14, precioUnit: 270.00, total: 3780.00 },
+                { producto: "Cables HDMI Fibra 2.1 30m NETCOM", cantidad: 6, precioUnit: 390.00, total: 2340.00 },
+                { producto: "Cables HDMI Fibra 2.1 10m NETCOM", cantidad: 6, precioUnit: 185.00, total: 1110.00 },
+                { producto: "Cable HDMI Fibra 2.1 5m NETCOM", cantidad: 4, precioUnit: 140.00, total: 560.00 },
+                { producto: "Rollo Cable XLR SHURE 100m", cantidad: 4, precioUnit: 380.00, total: 1520.00 },
+                { producto: "Rollo Cable XLR Amphenol 100m", cantidad: 1, precioUnit: 590.00, total: 590.00 },
+                { producto: "Rollo Cable XLR Daytona 100m", cantidad: 1, precioUnit: 420.00, total: 420.00 },
+                { producto: "Rollo Cable XLR KLOTZ 100m", cantidad: 6, precioUnit: 650.00, total: 3900.00 },
+                { producto: "Cables XLR 20m M/H NEUTRIK", cantidad: 14, precioUnit: 200.00, total: 2800.00 },
+                { producto: "Cables XLR 30m M/H NEUTRIK", cantidad: 6, precioUnit: 275.00, total: 1650.00 },
+                { producto: "Cables XLR 5m M/H NEUTRIK", cantidad: 12, precioUnit: 87.50, total: 1050.00 },
+                { producto: "Plug Canon Macho NEUTRIK", cantidad: 6, precioUnit: 25.00, total: 150.00 },
+                { producto: "Conector XLR M/H NEUTRIK", cantidad: 70, precioUnit: 25.00, total: 1750.00 },
+                { producto: "Plug Balanceados NEUTRIK", cantidad: 6, precioUnit: 35.00, total: 210.00 },
+                { producto: "Cable Extensor 3.0 USB NETCOM", cantidad: 1, precioUnit: 550.00, total: 550.00 }
+            ],
+            cot4: [
+                { producto: "Cable 20mtr. c/conector XLR NEUTRIK", cantidad: 14, precioUnit: 120.00, total: 1680.00 },
+                { producto: "Cable 30mtr. c/conector XLR-XLR NEUTRIK", cantidad: 6, precioUnit: 160.00, total: 960.00 },
+                { producto: "Cable 5mtr. c/conector XLR-XLR Neutrik", cantidad: 12, precioUnit: 60.00, total: 720.00 },
+                { producto: "Conectores XLR NEUTRIK MACHO", cantidad: 6, precioUnit: 125.00, total: 750.00 },
+                { producto: "Conectores XLR NEUTRIK (Macho 35 / Hembra 35)", cantidad: 70, precioUnit: 25.00, total: 1750.00 }
+            ]
+        };
+
+        // Normalizar nombres de productos para agrupar similares
+        function normalizarProducto(producto) {
+            let normalizado = producto.toLowerCase()
+                .replace(/netcom|netconnect/gi, '')
+                .replace(/neutrik|neurtik/gi, 'neutrik')
+                .replace(/hembra\/machos|m\/h/gi, 'm/h')
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            // Agrupar productos similares
+            if (normalizado.includes('hdmi fibra 2.1 20m') || normalizado.includes('hdmi fibra 2,1 20m')) {
+                return 'HDMI Fibra 2.1 20m';
+            }
+            if (normalizado.includes('hdmi fibra 2.1 30m') || normalizado.includes('hdmi fibra 2,1 30m')) {
+                return 'HDMI Fibra 2.1 30m';
+            }
+            if (normalizado.includes('hdmi fibra 2.1 10m') || normalizado.includes('hdmi de 10m 2,1')) {
+                return 'HDMI Fibra 2.1 10m';
+            }
+            if (normalizado.includes('hdmi fibra 2.1 5m') || normalizado.includes('hdmi de 5m 2,1')) {
+                return 'HDMI Fibra 2.1 5m';
+            }
+            if (normalizado.includes('rollo cable xlr') || normalizado.includes('rollos cable xlr') || normalizado.includes('rollos de cable canon')) {
+                return 'Rollos Cable XLR/Canon 100m';
+            }
+            if (normalizado.includes('cable xlr 20m') || normalizado.includes('cable xlr-xlr zouts neutrik') || normalizado.includes('cable 20mtr. c/conector xlr')) {
+                return 'Cables XLR 20m';
+            }
+            if (normalizado.includes('cable xlr 30m') || normalizado.includes('cable xlr-xlr zouts') || normalizado.includes('cable 30mtr. c/conector xlr')) {
+                return 'Cables XLR 30m';
+            }
+            if (normalizado.includes('cable xlr 5m') || normalizado.includes('cables xlr-xlr suits') || normalizado.includes('cable 5mtr. c/conector xlr')) {
+                return 'Cables XLR 5m';
+            }
+            if (normalizado.includes('puntas xlr') || normalizado.includes('conector xlr') || normalizado.includes('puntas canon neutrik') || normalizado.includes('conectores xlr neutrik')) {
+                return 'Puntas/Conectores XLR/Canon';
+            }
+            if (normalizado.includes('plug balanceado neutrik')) {
+                return 'Plug Balanceado Neutrik';
+            }
+            if (normalizado.includes('plug xlr') || normalizado.includes('plug canon') || normalizado.includes('conectores xlr neutrik macho')) {
+                return 'Plug XLR/Canon';
+            }
+            if (normalizado.includes('extensor usb 20m') || normalizado.includes('cables extensores usb 20m')) {
+                return 'Cables Extensores USB 20m';
+            }
+            if (normalizado.includes('extensor usb 30m') || normalizado.includes('cable extensor usb 30m')) {
+                return 'Cable Extensor USB 30m';
+            }
+            if (normalizado.includes('extensor 3.0 usb')) {
+                return 'Cable Extensor USB 3.0';
+            }
+            if (normalizado.includes('placas canon')) {
+                return 'Placas Canon';
+            }
+            if (normalizado.includes('placas hdmi')) {
+                return 'Placas HDMI';
+            }
+            if (normalizado.includes('costo por implementación')) {
+                return 'Costo por Implementación';
+            }
+            
+            return producto;
+        }
+
+        // Crear estructura de comparación
+        function crearComparacion() {
+            const productosUnicos = new Map();
+
+            // Agregar productos de cada cotización
+            ['cot1', 'cot2', 'cot3', 'cot4'].forEach((cotKey, cotIndex) => {
+                cotizaciones[cotKey].forEach(item => {
+                    const productoNormalizado = normalizarProducto(item.producto);
+                    
+                    if (!productosUnicos.has(productoNormalizado)) {
+                        productosUnicos.set(productoNormalizado, {
+                            nombre: productoNormalizado,
+                            cot1: null,
+                            cot2: null,
+                            cot3: null,
+                            cot4: null
+                        });
+                    }
+                    
+                    const producto = productosUnicos.get(productoNormalizado);
+                    producto[`cot${cotIndex + 1}`] = item;
+                });
+            });
+
+            return Array.from(productosUnicos.values());
+        }
+
+        // Formatear número como moneda peruana
+        function formatearMoneda(numero) {
+            if (numero === null || numero === undefined) return '-';
+            return `S/. ${numero.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        }
+
+        // Renderizar tabla
+        function renderizarTabla(highlightMode = 'none', filterCot = 'all') {
+            const comparacion = crearComparacion();
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            let total1 = 0, total2 = 0, total3 = 0, total4 = 0;
+
+            comparacion.forEach(producto => {
+                // Filtrar por cotización si es necesario
+                if (filterCot !== 'all') {
+                    const cotNum = filterCot.replace('cot', '');
+                    if (!producto[filterCot]) return;
+                }
+
+                const row = document.createElement('tr');
+                
+                // Nombre del producto
+                const tdNombre = document.createElement('td');
+                tdNombre.className = 'product-name';
+                tdNombre.textContent = producto.nombre;
+                row.appendChild(tdNombre);
+
+                // Obtener la cantidad (de cualquier cotización disponible)
+                let cantidadGeneral = null;
+                ['cot1', 'cot2', 'cot3', 'cot4'].forEach(cotKey => {
+                    if (!cantidadGeneral && producto[cotKey]) {
+                        cantidadGeneral = producto[cotKey].cantidad;
+                    }
+                });
+
+                // Columna de cantidad general
+                const tdCantGeneral = document.createElement('td');
+                tdCantGeneral.className = 'quantity';
+                tdCantGeneral.textContent = cantidadGeneral || '-';
+                row.appendChild(tdCantGeneral);
+
+                // Calcular el precio más barato para este producto
+                const precios = [producto.cot1?.precioUnit, producto.cot2?.precioUnit, producto.cot3?.precioUnit, producto.cot4?.precioUnit]
+                    .filter(p => p !== null && p !== undefined);
+                const minPrecio = precios.length > 0 ? Math.min(...precios) : null;
+
+                // Datos de cada cotización
+                ['cot1', 'cot2', 'cot3', 'cot4'].forEach((cotKey, index) => {
+                    const item = producto[cotKey];
+                    
+                    if (item) {
+                        // Precio unitario
+                        const tdPrecio = document.createElement('td');
+                        tdPrecio.className = 'price';
+                        tdPrecio.textContent = formatearMoneda(item.precioUnit);
+                        
+                        // Resaltar siempre el precio más barato en verde y negrita
+                        if (minPrecio !== null && item.precioUnit === minPrecio && precios.length > 1) {
+                            tdPrecio.classList.add('best-price');
+                        }
+                        
+                        row.appendChild(tdPrecio);
+
+                        // Total
+                        const tdTotal = document.createElement('td');
+                        tdTotal.className = 'total';
+                        tdTotal.textContent = formatearMoneda(item.total);
+                        row.appendChild(tdTotal);
+
+                        // Acumular totales
+                        if (index === 0) total1 += item.total;
+                        if (index === 1) total2 += item.total;
+                        if (index === 2) total3 += item.total;
+                        if (index === 3) total4 += item.total;
+                    } else {
+                        // Celda vacía para precio unitario
+                        const tdPrecio = document.createElement('td');
+                        tdPrecio.className = 'not-available';
+                        tdPrecio.textContent = '-';
+                        row.appendChild(tdPrecio);
+
+                        // Celda vacía para total
+                        const tdTotal = document.createElement('td');
+                        tdTotal.className = 'not-available';
+                        tdTotal.textContent = '-';
+                        row.appendChild(tdTotal);
+                    }
+                });
+
+                tbody.appendChild(row);
+            });
+
+            // Actualizar totales
+            document.getElementById('total1').textContent = formatearMoneda(total1);
+            document.getElementById('total2').textContent = formatearMoneda(total2);
+            document.getElementById('total3').textContent = formatearMoneda(total3);
+            document.getElementById('total4').textContent = formatearMoneda(total4);
+        }
+
+        // Nombres de las cotizaciones
+        const nombresCotizaciones = {
+            cot1: 'Alexis',
+            cot2: 'Comercial Ysabel',
+            cot3: 'Sonex',
+            cot4: 'Importaciones Matt'
+        };
+
+        // Generar PDF con la mejor orden de compra
+        function generarMejorOrdenCompra() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF(); // Formato vertical
+            
+            // Configuración
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 10; // Margen izquierdo reducido para centrar mejor
+            const startY = 20;
+            let yPos = startY;
+            const lineHeight = 8;
+            const maxWidth = pageWidth - (margin * 2);
+
+            // Título (centrado)
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 95);
+            doc.setFont('helvetica', 'bold');
+            const tituloTexto = 'Mejor Orden de Compra';
+            const tituloWidth = doc.getTextWidth(tituloTexto);
+            doc.text(tituloTexto, (pageWidth - tituloWidth) / 2, yPos);
+            yPos += 10;
+
+            // Fecha
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            const fecha = new Date().toLocaleDateString('es-PE', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            doc.text(`Fecha: ${fecha}`, margin, yPos);
+            yPos += 15;
+
+            // Posiciones de columnas (ajustadas para formato vertical con más espacio para producto)
+            const colProducto = margin;
+            const colCantidad = margin + 85;
+            const colTienda = margin + 100;
+            const colPrecioUnit = margin + 140;
+            const colTotal = margin + 170;
+
+            // Encabezados de tabla
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(30, 58, 95);
+            doc.text('Producto', colProducto, yPos);
+            doc.text('Cant.', colCantidad, yPos);
+            doc.text('Tienda', colTienda, yPos);
+            doc.text('P. Unit.', colPrecioUnit, yPos);
+            doc.text('Total', colTotal, yPos);
+            yPos += 5;
+            
+            // Línea separadora
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 8;
+
+            // Obtener comparación
+            const comparacion = crearComparacion();
+            let totalGeneral = 0;
+
+            // Datos de la tabla
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0);
+
+            comparacion.forEach((producto, index) => {
+                // Verificar si hay espacio en la página
+                if (yPos > pageHeight - 20) {
+                    doc.addPage();
+                    yPos = startY;
+                }
+
+                // Encontrar el mejor precio
+                const precios = [];
+                ['cot1', 'cot2', 'cot3', 'cot4'].forEach(cotKey => {
+                    if (producto[cotKey]) {
+                        precios.push({
+                            cotKey: cotKey,
+                            nombre: nombresCotizaciones[cotKey],
+                            precioUnit: producto[cotKey].precioUnit,
+                            cantidad: producto[cotKey].cantidad,
+                            total: producto[cotKey].total
+                        });
+                    }
+                });
+
+                if (precios.length === 0) return;
+
+                // Ordenar por precio unitario
+                precios.sort((a, b) => a.precioUnit - b.precioUnit);
+                const mejorOpcion = precios[0];
+
+                // Producto (puede ser largo, ajustar si es necesario)
+                const maxWidthProducto = colCantidad - colProducto - 3;
+                let productoTexto = producto.nombre;
+                const lines = doc.splitTextToSize(productoTexto, maxWidthProducto);
+                
+                // Mostrar todas las líneas del producto si es necesario
+                let productoYPos = yPos;
+                lines.forEach((line, idx) => {
+                    doc.text(line, colProducto, productoYPos);
+                    if (idx < lines.length - 1) {
+                        productoYPos += 4;
+                    }
+                });
+                
+                // Usar la posición más baja para alinear el resto de columnas
+                const finalYPos = productoYPos;
+
+                // Cantidad
+                doc.text(mejorOpcion.cantidad.toString(), colCantidad, finalYPos);
+
+                // Tienda (puede ser largo también)
+                const maxWidthTienda = colPrecioUnit - colTienda - 3;
+                let tiendaTexto = mejorOpcion.nombre;
+                const tiendaLines = doc.splitTextToSize(tiendaTexto, maxWidthTienda);
+                doc.text(tiendaLines[0], colTienda, finalYPos);
+
+                // Precio unitario (alineado a la derecha)
+                const precioUnitTexto = formatearMoneda(mejorOpcion.precioUnit);
+                const precioUnitWidth = doc.getTextWidth(precioUnitTexto);
+                doc.text(precioUnitTexto, colPrecioUnit + 25 - precioUnitWidth, finalYPos);
+
+                // Total (alineado a la derecha)
+                const totalTexto = formatearMoneda(mejorOpcion.total);
+                const totalWidth = doc.getTextWidth(totalTexto);
+                doc.text(totalTexto, colTotal + 25 - totalWidth, finalYPos);
+
+                // Actualizar yPos para la siguiente fila
+                yPos = finalYPos;
+
+                totalGeneral += mejorOpcion.total;
+                yPos += lineHeight;
+            });
+
+            // Línea separadora antes del total
+            yPos += 5;
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 8;
+
+            // Total general
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(30, 58, 95);
+            // Separar "TOTAL GENERAL" en dos líneas o ponerlo más a la izquierda
+            doc.text('TOTAL GENERAL:', colTienda, yPos);
+            const totalGeneralTexto = formatearMoneda(totalGeneral);
+            const totalGeneralWidth = doc.getTextWidth(totalGeneralTexto);
+            doc.text(totalGeneralTexto, colTotal + 25 - totalGeneralWidth, yPos);
+
+            // Guardar PDF
+            const nombreArchivo = `Mejor_Orden_Compra_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(nombreArchivo);
+        }
+
+        // Event listeners
+        document.getElementById('highlightMode').addEventListener('change', (e) => {
+            const filterCot = document.getElementById('filterCotizacion').value;
+            renderizarTabla(e.target.value, filterCot);
+        });
+
+        document.getElementById('filterCotizacion').addEventListener('change', (e) => {
+            const highlightMode = document.getElementById('highlightMode').value;
+            renderizarTabla(highlightMode, e.target.value);
+        });
+
+        document.getElementById('btnGeneratePDF').addEventListener('click', generarMejorOrdenCompra);
+
+        // Inicializar
+        renderizarTabla();
+    </script>
+</body>
+</html>
